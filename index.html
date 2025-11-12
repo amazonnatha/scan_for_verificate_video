@@ -1,56 +1,132 @@
-import qrcode
-import os
-from PIL import Image, ImageDraw, ImageFont
+<!DOCTYPE html>
+<html lang="en">
 
-# --- CONFIGURATION ---
-# 1. Base URL for your live GitHub Pages website (NO verification parameter needed)
-LIVE_WEBPAGE_URL = "https://amazonnatha.github.io/scan_for_verificate_video/"
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JGTL Gemstone Video Report: testsapphiregreen</title>
+    <style>
+        /* Define the gold/light theme colors */
+        :root {
+            --golden-rim: #d2b48c;
+            --golden-text: #a0845c;
+            --light-bg: #f9f5ee;
+            --button-bg: #b8860b;
+        }
 
-# The text label to display beneath the QR code image
-FILE_LABEL = "testsapphiregreen.mp4" 
+        /* General Styling */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light-bg);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+            min-height: 100vh;
+            color: #333;
+        }
 
-# Directory to save the QR code image
-output_dir = 'static_qr_code_final'
-os.makedirs(output_dir, exist_ok=True) 
+        /* Header */
+        .header {
+            width: 100%;
+            background-color: #ffffff;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 20px 0;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            margin-bottom: 20px;
+            max-width: 700px;
+            border-radius: 12px;
+        }
 
-# Create a QR Code
-qr = qrcode.QRCode(
-    version=1,
-    error_correction=qrcode.constants.ERROR_CORRECT_H,
-    box_size=10,
-    border=4,
-)
+        .header img {
+            max-width: 200px;
+            vertical-align: middle;
+            margin-bottom: 5px;
+        }
 
-# Add the static LIVE WEBPAGE URL to the QR code
-qr.add_data(LIVE_WEBPAGE_URL)
-qr.make(fit=True)
+        .header-title {
+            font-size: 1.4rem;
+            color: var(--golden-text);
+            font-weight: 600;
+        }
 
-# Generate the QR code image
-qr_code_img = qr.make_image(fill_color="black", back_color="white").convert("RGB")
+        /* Video Container */
+        .video-container {
+            width: 90%;
+            max-width: 700px;
+            padding: 25px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            border: 2px solid var(--golden-rim);
+        }
 
-# Create a new image with space for the text label
-new_img = Image.new("RGB", (qr_code_img.width, qr_code_img.height + qr_code_img.width // 4), "white")
-new_img.paste(qr_code_img, (0, 0))
+        /* Video Styling */
+        video {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            margin-bottom: 15px;
+        }
 
-# Draw the text label
-draw = ImageDraw.Draw(new_img)
-try:
-    font_size = qr_code_img.width // 10
-    font = ImageFont.truetype("Arial.ttf", font_size)
-except IOError:
-    font = ImageFont.load_default() 
+        h1 {
+            color: var(--golden-text);
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+        
+        /* Footer */
+        footer {
+            margin-top: auto;
+            padding: 20px;
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            text-align: center;
+            width: 100%;
+            max-width: 700px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
 
-# Center the text label
-text_bbox = draw.textbbox((0, 0), FILE_LABEL, font=font)
-text_width = text_bbox[2] - text_bbox[0]
-text_x = (new_img.width - text_width) // 2
-text_y = qr_code_img.height + 10 
+<body>
 
-draw.text((text_x, text_y), FILE_LABEL, fill="black", font=font)
+    <div class="header">
+        <img src="https://verify.jgtl.org/Jade%20and%20Gems%20Testing%20Laboratory(3).png" alt="Jade and Gems Testing Laboratory Logo">
+        <div class="header-title">JGTL Gemstone Video Report</div>
+    </div>
 
-# Save the final image
-qr_file_name = f"{output_dir}/{FILE_LABEL}_static_webpage_qr.png"
-new_img.save(qr_file_name)
+    <div class="video-container">
+        <h1>Video: testsapphiregreen</h1>
+        
+        <video controls autoplay>
+            <source src="https://storage.googleapis.com/reportcheck.jgtl.org/video/testsapphiregreen.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
 
-print(f"✅ FINAL QR Code generated successfully at: {qr_file_name}")
-print(f"The QR code links to the webpage: {LIVE_WEBPAGE_URL}")
+        <p style="font-size: 0.9rem; color: #666;">Verification successful via direct link.</p>
+        
+        <a href="https://www.jgtl.org" style="
+            display: inline-block;
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 1rem;
+            padding: 10px 20px;
+            margin-top: 15px;
+            background-color: var(--button-bg);
+            border-radius: 6px;
+        ">Back to Website</a>
+    </div>
+
+    <footer>
+        &copy; 2025 Jade and Gems Testing Laboratory. All rights reserved.
+    </footer>
+
+</body>
+
+</html>
