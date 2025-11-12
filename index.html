@@ -52,7 +52,7 @@
             font-weight: 600;
         }
 
-        /* Video Container */
+        /* Video/Fallback Container Styling */
         .image-container {
             margin-top: 30px;
             width: 90%;
@@ -71,7 +71,8 @@
             border: 2px solid var(--golden-rim);
         }
 
-        /* Styling for Video Element */
+        /* General Media Styling */
+        .image-container img,
         .image-container video {
             max-width: 100%;
             height: auto;
@@ -89,6 +90,7 @@
             color: var(--golden-text);
             margin-bottom: 5px;
         }
+
 
         /* Loading Spinner */
         .spinner {
@@ -154,6 +156,8 @@
     <div class="image-container">
         <div id="spinner" class="spinner"></div>
 
+        <img src="https://verify.jgtl.org/Certificate%20Back%20white.png" alt="Certificate Back" id="staticImage">
+
         <video id="CertificateVideo" controls style="display: none;">
             Your browser does not support the video tag.
         </video>
@@ -162,7 +166,7 @@
     </div>
 
     <footer>
-        &copy; 2025 Jade and Gems Testing Laboratory. All rights reserved.
+        &copy; 2024 Jade and Gems Testing Laboratory. All rights reserved.
     </footer>
 
     <script>
@@ -170,17 +174,20 @@
         const queryString = window.location.search;
         const urlParams = new URLSearchParams(queryString);
 
-        // Extract the DYNAMIC file name from the 'verify' parameter
+        // Extract the 'verify' parameter
         const fileName = urlParams.get('verify');
 
-        // *** MODIFIED HERE: Removed the '/video/' subdirectory ***
-        // The base URL now directly points to the bucket root for the dynamic file name.
-        const videoBaseURL = "https://storage.googleapis.com/reportcheck.jgtl.org/";
+        // *** MODIFIED BASE URL TO THE GCS PUBLIC PATH ***
+        // This is the correct base path for the root of your GCS bucket.
+        const baseURL = "https://storage.googleapis.com/reportcheck.jgtl.org/";
 
-        // Get the elements
+        // Get the media container and spinner
+        // NOTE: CertificateImage is now CertificateVideo
         const certificateVideo = document.getElementById('CertificateVideo');
         const spinner = document.getElementById('spinner');
+        const staticImage = document.getElementById('staticImage');
         const imageContainer = document.querySelector('.image-container');
+
 
         // --- Helper Functions ---
 
@@ -191,26 +198,26 @@
             spinner.style.display = 'none';
             certificateVideo.style.display = 'none';
 
-            // Replaces the entire content of the container with the error message and fallback image
+            // Replaces the content of the container with the error message and fallback image
             imageContainer.innerHTML = `
                 <div class="error-message">
                     <h3>Verification Failed</h3>
                     <p>${message}</p>
                 </div>
-                <img src="https://verify.jgtl.org/Certificate%20Back%20white.png" alt="Fallback Image" style="max-width: 100%; height: auto; border-radius: 8px; margin-bottom: 15px; box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);">
+                ${staticImage.outerHTML} 
                 <a href="https://www.jgtl.org" class="certificate-link">Back to Website</a>
             `;
         }
 
         /**
-         * Checks file existence using a fast fetch HEAD request.
+         * Checks file existence using a fast fetch HEAD request (required for reliable video check).
          */
         async function checkFileExistence(url) {
             try {
                 const response = await fetch(url, {
                     method: 'HEAD'
                 });
-                // Returns true for 200-299 status codes (File exists)
+                // Returns true for 200-299 status codes
                 return response.ok;
             } catch (error) {
                 console.error("Network or Fetch error:", error);
@@ -219,35 +226,30 @@
         }
 
         // --- Main Logic ---
-        async function loadCertificateVideo() {
-            if (!fileName) {
-                displayError("No verification ID provided in the URL. Please use the format: ?verify=ID.");
-                return;
-            }
+        if (fileName) {
+            // *** MODIFIED EXTENSION TO .mp4 ***
+            const videoUrl = `${baseURL}${fileName}.mp4`;
 
-            // Show spinner
+            // Show the spinner before loading
             spinner.style.display = 'block';
+            staticImage.style.display = 'none'; // Hide static image when trying to load dynamic one
 
-            // Construct the DYNAMIC URL (e.g., https://storage.googleapis.com/.../Video1.mp4)
-            const videoURL = `${videoBaseURL}${fileName}.mp4`;
-
-            // Check for the MP4 video
-            const videoExists = await checkFileExistence(videoURL);
-
-            if (videoExists) {
-                // Display Video
-                certificateVideo.src = videoURL;
-                certificateVideo.style.display = 'block';
-                spinner.style.display = 'none';
-
-            } else {
-                // Video not found
-                displayError("Video report not found for ID: " + fileName + ". Please check the ID and try again.");
-            }
+            // Check for the MP4 video file
+            checkFileExistence(videoUrl).then((exists) => {
+                if (exists) {
+                    // Display Video
+                    certificateVideo.src = videoUrl;
+                    certificateVideo.style.display = 'block';
+                    spinner.style.display = 'none';
+                } else {
+                    // Video not found
+                    displayError("Video report not found for ID: " + fileName + ". Please check the ID and ensure public access is enabled on the server.");
+                }
+            });
+        } else {
+            // No ID provided
+            displayError("No verification ID provided in the URL. Please use the format: ?verify=ID.");
         }
-
-        // Start the loading process
-        loadCertificateVideo();
     </script>
 
 </body>
