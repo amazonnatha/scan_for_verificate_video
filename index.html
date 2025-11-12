@@ -170,12 +170,12 @@
         const queryString = window.location.search;
         const urlParams = new URLSearchParams(queryString);
 
-        // Extract the 'verify' parameter (e.g., 'JGTL25A021')
+        // Extract the DYNAMIC file name from the 'verify' parameter
         const fileName = urlParams.get('verify');
 
-        // *** NOTE: The GCS URI (gs://) is converted to the required HTTPS URL for web access ***
-        // This URL points to: https://storage.googleapis.com/reportcheck.jgtl.org/video/
-        const videoBaseURL = "https://storage.googleapis.com/reportcheck.jgtl.org/video/";
+        // Define the base URL for the video directory, which will be combined with fileName.mp4
+        // Assuming this is the correct web-accessible path for dynamic lookups:
+        const videoBaseURL = "https://reportcheck.jgtl.org/video/";
 
         // Get the elements
         const certificateVideo = document.getElementById('CertificateVideo');
@@ -221,14 +221,14 @@
         // --- Main Logic ---
         async function loadCertificateVideo() {
             if (!fileName) {
-                displayError("No verification ID provided in the URL.");
+                displayError("No verification ID provided in the URL. Please use the format: ?verify=ID.");
                 return;
             }
 
             // Show spinner
             spinner.style.display = 'block';
 
-            // Construct the dynamic URL (e.g., https://.../video/JGTL25A021.mp4)
+            // Construct the DYNAMIC URL (e.g., https://reportcheck.jgtl.org/video/JGTL25A021.mp4)
             const videoURL = `${videoBaseURL}${fileName}.mp4`;
 
             // Check for the MP4 video
