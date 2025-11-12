@@ -1,69 +1,242 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JGTL Gemstone Video Report</title>
+    <title>JGTL Online Report Verification</title>
     <style>
         /* Define the gold/light theme colors */
         :root {
             --golden-rim: #d2b48c;
             --golden-text: #a0845c;
-            --light-bg: #f9f5ee; /* Light gold/cream background */
+            --button-bg: #b8860b;
+            --button-hover-bg: #a07a00;
+            --light-bg: #f9f5ee;
         }
 
-        /* Set page background and structure */
+        /* General Styling */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--light-bg); 
+            background-color: var(--light-bg);
             margin: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 40px 20px;
             min-height: 100vh;
+            color: #333;
         }
 
-        /* Style the main container for the video and title */
-        .video-container {
+        /* Header */
+        .header {
+            width: 100%;
+            background-color: #ffffff;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 20px 0;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header img {
+            max-width: 200px;
+            vertical-align: middle;
+            margin-bottom: 5px;
+        }
+
+        .header-title {
+            font-size: 1.4rem;
+            color: var(--golden-text);
+            font-weight: 600;
+        }
+
+        /* Video Container */
+        .image-container {
+            margin-top: 30px;
             width: 90%;
             max-width: 700px;
-            padding: 30px;
+            padding: 25px;
             background-color: #ffffff;
-            border-radius: 15px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.1);
             text-align: center;
-            border: 3px solid var(--golden-rim); /* Gold rim border */
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
+            border: 2px solid var(--golden-rim);
         }
 
-        /* Style the Title */
-        h1 {
-            color: var(--golden-text); 
-            font-size: 1.8rem;
-            margin-bottom: 20px;
-            font-weight: 700;
-        }
-
-        /* Style the Video element */
-        video {
+        /* Styling for Video Element */
+        .image-container video {
             max-width: 100%;
             height: auto;
             border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-            margin-top: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Error Message Styling */
+        .error-message {
+            margin: 20px 0;
+        }
+
+        .error-message h3 {
+            color: var(--golden-text);
+            margin-bottom: 5px;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--golden-text);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: block;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .certificate-link {
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 1rem;
+            padding: 12px 25px;
+            margin-top: 20px;
+            background-color: var(--button-bg);
+            border-radius: 6px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.2);
+            border: none;
+        }
+
+        .certificate-link:hover {
+            background-color: var(--button-hover-bg);
+            transform: translateY(-2px);
+        }
+
+        /* Footer */
+        footer {
+            margin-top: auto;
+            padding: 20px;
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            text-align: center;
+            width: 100%;
+            background-color: #ffffff;
+            border-top: 1px solid #e0e0e0;
         }
     </style>
 </head>
+
 <body>
 
-    <div class="video-container">
-        <h1>JGTL Gemstone Video</h1>
-        
-        <video controls autoplay>
-            <source src="https://storage.googleapis.com/reportcheck.jgtl.org/JGTL25QQ1.mp4" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
+    <div class="header">
+        <img src="https://verify.jgtl.org/Jade%20and%20Gems%20Testing%20Laboratory(3).png" alt="Jade and Gems Testing Laboratory Logo">
+        <div class="header-title">Jade and Gems Testing Laboratory - Online Report Verification</div>
     </div>
 
+    <div class="image-container">
+        <div id="spinner" class="spinner"></div>
+
+        <video id="CertificateVideo" controls style="display: none;">
+            Your browser does not support the video tag.
+        </video>
+
+        <a href="https://www.jgtl.org" class="certificate-link">Back to Website</a>
+    </div>
+
+    <footer>
+        &copy; 2025 Jade and Gems Testing Laboratory. All rights reserved.
+    </footer>
+
+    <script>
+        // Get the query parameters from the URL
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+
+        // Extract the DYNAMIC file name from the 'verify' parameter
+        const fileName = urlParams.get('verify');
+
+        // *** CORRECT DYNAMIC PATH FOR VIDEO SUBDIRECTORY ***
+        const videoBaseURL = "https://storage.googleapis.com/reportcheck.jgtl.org/video/";
+
+        // Get the elements
+        const certificateVideo = document.getElementById('CertificateVideo');
+        const spinner = document.getElementById('spinner');
+        const imageContainer = document.querySelector('.image-container');
+
+        // --- Helper Functions ---
+
+        function displayError(message) {
+            spinner.style.display = 'none';
+            certificateVideo.style.display = 'none';
+            
+            // Fallback image (must be hardcoded since the original static image element was removed)
+            const fallbackImageHtml = '<img src="https://verify.jgtl.org/Certificate%20Back%20white.png" alt="Fallback Image" style="max-width: 100%; height: auto; border-radius: 8px; margin-bottom: 15px; box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);">';
+
+            imageContainer.innerHTML = `
+                <div class="error-message">
+                    <h3>Verification Failed</h3>
+                    <p>${message}</p>
+                </div>
+                ${fallbackImageHtml}
+                <a href="https://www.jgtl.org" class="certificate-link">Back to Website</a>
+            `;
+        }
+
+        async function checkFileExistence(url) {
+            try {
+                const response = await fetch(url, { method: 'HEAD' });
+                return response.ok;
+            } catch (error) {
+                console.error("Network or Fetch error:", error);
+                return false;
+            }
+        }
+
+        // --- Main Logic ---
+        async function loadCertificateVideo() {
+            if (!fileName) {
+                displayError("No video ID provided in the URL. Please use the format: ?verify=ID.");
+                return;
+            }
+
+            spinner.style.display = 'block';
+
+            // Construct the DYNAMIC URL (e.g., https://.../video/testsapphiregreen.mp4)
+            const videoURL = `${videoBaseURL}${fileName}.mp4`;
+
+            const videoExists = await checkFileExistence(videoURL);
+
+            if (videoExists) {
+                certificateVideo.src = videoURL;
+                certificateVideo.style.display = 'block';
+                spinner.style.display = 'none';
+            } else {
+                displayError("Video report not found for ID: " + fileName + ". Please check the file name and public access.");
+            }
+        }
+
+        // Start the loading process
+        loadCertificateVideo();
+    </script>
+
 </body>
+
 </html>
