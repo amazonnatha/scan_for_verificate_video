@@ -173,7 +173,8 @@
         // Extract the DYNAMIC file name from the 'verify' parameter
         const fileName = urlParams.get('verify');
 
-        // *** CORRECT DYNAMIC PATH FOR VIDEO SUBDIRECTORY ***
+        // *** THIS IS THE CORRECT GCS PUBLIC PATH ***
+        // It points to: https://storage.googleapis.com/reportcheck.jgtl.org/video/
         const videoBaseURL = "https://storage.googleapis.com/reportcheck.jgtl.org/video/";
 
         // Get the elements
@@ -202,6 +203,7 @@
 
         async function checkFileExistence(url) {
             try {
+                // Use fetch HEAD for reliable check
                 const response = await fetch(url, { method: 'HEAD' });
                 return response.ok;
             } catch (error) {
