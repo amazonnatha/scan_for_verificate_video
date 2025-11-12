@@ -1,244 +1,56 @@
-<!DOCTYPE html>
-<html lang="en">
+import qrcode
+import os
+from PIL import Image, ImageDraw, ImageFont
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JGTL Online Report Verification</title>
-    <style>
-        /* Define the gold/light theme colors */
-        :root {
-            --golden-rim: #d2b48c;
-            --golden-text: #a0845c;
-            --button-bg: #b8860b;
-            --button-hover-bg: #a07a00;
-            --light-bg: #f9f5ee;
-        }
+# --- CONFIGURATION ---
+# 1. Base URL for your live GitHub Pages website (NO verification parameter needed)
+LIVE_WEBPAGE_URL = "https://amazonnatha.github.io/scan_for_verificate_video/"
 
-        /* General Styling */
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--light-bg);
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            color: #333;
-        }
+# The text label to display beneath the QR code image
+FILE_LABEL = "testsapphiregreen.mp4" 
 
-        /* Header */
-        .header {
-            width: 100%;
-            background-color: #ffffff;
-            border-bottom: 1px solid #e0e0e0;
-            padding: 20px 0;
-            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.05);
-            text-align: center;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
+# Directory to save the QR code image
+output_dir = 'static_qr_code_final'
+os.makedirs(output_dir, exist_ok=True) 
 
-        .header img {
-            max-width: 200px;
-            vertical-align: middle;
-            margin-bottom: 5px;
-        }
+# Create a QR Code
+qr = qrcode.QRCode(
+    version=1,
+    error_correction=qrcode.constants.ERROR_CORRECT_H,
+    box_size=10,
+    border=4,
+)
 
-        .header-title {
-            font-size: 1.4rem;
-            color: var(--golden-text);
-            font-weight: 600;
-        }
+# Add the static LIVE WEBPAGE URL to the QR code
+qr.add_data(LIVE_WEBPAGE_URL)
+qr.make(fit=True)
 
-        /* Video Container */
-        .image-container {
-            margin-top: 30px;
-            width: 90%;
-            max-width: 700px;
-            padding: 25px;
-            background-color: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 300px;
-            border: 2px solid var(--golden-rim);
-        }
+# Generate the QR code image
+qr_code_img = qr.make_image(fill_color="black", back_color="white").convert("RGB")
 
-        /* Styling for Video Element */
-        .image-container video {
-            max-width: 100%;
-            height: auto;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-        }
+# Create a new image with space for the text label
+new_img = Image.new("RGB", (qr_code_img.width, qr_code_img.height + qr_code_img.width // 4), "white")
+new_img.paste(qr_code_img, (0, 0))
 
-        /* Error Message Styling */
-        .error-message {
-            margin: 20px 0;
-        }
+# Draw the text label
+draw = ImageDraw.Draw(new_img)
+try:
+    font_size = qr_code_img.width // 10
+    font = ImageFont.truetype("Arial.ttf", font_size)
+except IOError:
+    font = ImageFont.load_default() 
 
-        .error-message h3 {
-            color: var(--golden-text);
-            margin-bottom: 5px;
-        }
+# Center the text label
+text_bbox = draw.textbbox((0, 0), FILE_LABEL, font=font)
+text_width = text_bbox[2] - text_bbox[0]
+text_x = (new_img.width - text_width) // 2
+text_y = qr_code_img.height + 10 
 
-        /* Loading Spinner */
-        .spinner {
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid var(--golden-text);
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
-            display: block;
-        }
+draw.text((text_x, text_y), FILE_LABEL, fill="black", font=font)
 
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
+# Save the final image
+qr_file_name = f"{output_dir}/{FILE_LABEL}_static_webpage_qr.png"
+new_img.save(qr_file_name)
 
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        .certificate-link {
-            color: #ffffff;
-            text-decoration: none;
-            font-size: 1rem;
-            padding: 12px 25px;
-            margin-top: 20px;
-            background-color: var(--button-bg);
-            border-radius: 6px;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-            box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.2);
-            border: none;
-        }
-
-        .certificate-link:hover {
-            background-color: var(--button-hover-bg);
-            transform: translateY(-2px);
-        }
-
-        /* Footer */
-        footer {
-            margin-top: auto;
-            padding: 20px;
-            font-size: 0.85rem;
-            color: #7f8c8d;
-            text-align: center;
-            width: 100%;
-            background-color: #ffffff;
-            border-top: 1px solid #e0e0e0;
-        }
-    </style>
-</head>
-
-<body>
-
-    <div class="header">
-        <img src="https://verify.jgtl.org/Jade%20and%20Gems%20Testing%20Laboratory(3).png" alt="Jade and Gems Testing Laboratory Logo">
-        <div class="header-title">Jade and Gems Testing Laboratory - Online Report Verification</div>
-    </div>
-
-    <div class="image-container">
-        <div id="spinner" class="spinner"></div>
-
-        <video id="CertificateVideo" controls style="display: none;">
-            Your browser does not support the video tag.
-        </video>
-
-        <a href="https://www.jgtl.org" class="certificate-link">Back to Website</a>
-    </div>
-
-    <footer>
-        &copy; 2025 Jade and Gems Testing Laboratory. All rights reserved.
-    </footer>
-
-    <script>
-        // Get the query parameters from the URL
-        const queryString = window.location.search;
-        const urlParams = new URLSearchParams(queryString);
-
-        // Extract the DYNAMIC file name from the 'verify' parameter
-        const fileName = urlParams.get('verify');
-
-        // *** THIS IS THE CORRECT GCS PUBLIC PATH ***
-        // It points to: https://storage.googleapis.com/reportcheck.jgtl.org/video/
-        const videoBaseURL = "https://storage.googleapis.com/reportcheck.jgtl.org/video/";
-
-        // Get the elements
-        const certificateVideo = document.getElementById('CertificateVideo');
-        const spinner = document.getElementById('spinner');
-        const imageContainer = document.querySelector('.image-container');
-
-        // --- Helper Functions ---
-
-        function displayError(message) {
-            spinner.style.display = 'none';
-            certificateVideo.style.display = 'none';
-            
-            // Fallback image (must be hardcoded since the original static image element was removed)
-            const fallbackImageHtml = '<img src="https://verify.jgtl.org/Certificate%20Back%20white.png" alt="Fallback Image" style="max-width: 100%; height: auto; border-radius: 8px; margin-bottom: 15px; box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);">';
-
-            imageContainer.innerHTML = `
-                <div class="error-message">
-                    <h3>Verification Failed</h3>
-                    <p>${message}</p>
-                </div>
-                ${fallbackImageHtml}
-                <a href="https://www.jgtl.org" class="certificate-link">Back to Website</a>
-            `;
-        }
-
-        async function checkFileExistence(url) {
-            try {
-                // Use fetch HEAD for reliable check
-                const response = await fetch(url, { method: 'HEAD' });
-                return response.ok;
-            } catch (error) {
-                console.error("Network or Fetch error:", error);
-                return false;
-            }
-        }
-
-        // --- Main Logic ---
-        async function loadCertificateVideo() {
-            if (!fileName) {
-                displayError("No video ID provided in the URL. Please use the format: ?verify=ID.");
-                return;
-            }
-
-            spinner.style.display = 'block';
-
-            // Construct the DYNAMIC URL (e.g., https://.../video/testsapphiregreen.mp4)
-            const videoURL = `${videoBaseURL}${fileName}.mp4`;
-
-            const videoExists = await checkFileExistence(videoURL);
-
-            if (videoExists) {
-                certificateVideo.src = videoURL;
-                certificateVideo.style.display = 'block';
-                spinner.style.display = 'none';
-            } else {
-                displayError("Video report not found for ID: " + fileName + ". Please check the file name and public access.");
-            }
-        }
-
-        // Start the loading process
-        loadCertificateVideo();
-    </script>
-
-</body>
-
-</html>
+print(f"✅ FINAL QR Code generated successfully at: {qr_file_name}")
+print(f"The QR code links to the webpage: {LIVE_WEBPAGE_URL}")
