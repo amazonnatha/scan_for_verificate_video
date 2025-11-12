@@ -173,9 +173,9 @@
         // Extract the DYNAMIC file name from the 'verify' parameter
         const fileName = urlParams.get('verify');
 
-        // Define the base URL for the video directory, which will be combined with fileName.mp4
-        // Assuming this is the correct web-accessible path for dynamic lookups:
-        const videoBaseURL = "https://reportcheck.jgtl.org/video/";
+        // *** MODIFIED LINE ***
+        // Define the base URL using the GCS public access path.
+        const videoBaseURL = "https://storage.googleapis.com/reportcheck.jgtl.org/video/";
 
         // Get the elements
         const certificateVideo = document.getElementById('CertificateVideo');
@@ -228,7 +228,7 @@
             // Show spinner
             spinner.style.display = 'block';
 
-            // Construct the DYNAMIC URL (e.g., https://reportcheck.jgtl.org/video/JGTL25A021.mp4)
+            // Construct the DYNAMIC URL (e.g., https://storage.googleapis.com/.../video/JGTL25A021.mp4)
             const videoURL = `${videoBaseURL}${fileName}.mp4`;
 
             // Check for the MP4 video
