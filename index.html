@@ -60,20 +60,22 @@
             border: 3px solid var(--primary-gold); 
         }
 
-        /* --- NEW STYLE FOR IMAGE CONTAINER --- */
+        /* NEW STYLE FOR IMAGE CONTAINER */
         .image-container {
             margin-bottom: 25px;
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 8px;
             background-color: #fafafa;
+            position: relative;
+            min-height: 150px; /* Ensures space while loading */
         }
         
         .report-image {
             max-width: 100%;
             height: auto;
             border-radius: 6px;
-            display: none; /* Hidden by default until loaded by JS */
+            display: none; 
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
 
@@ -128,6 +130,23 @@
             max-width: 800px;
             margin-top: 30px;
         }
+
+        /* Spinner from first code block, hidden by default */
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--golden-text);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none; /* Hide spinner initially */
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 
@@ -142,8 +161,9 @@
         <h1 id="videoTitle">Loading Report...</h1>
         
         <div class="image-container">
+            <div id="spinner" class="spinner"></div>
             <img id="reportImage" class="report-image" alt="Report Image / Certificate" loading="lazy">
-            <p id="imageStatus" style="font-style: italic; font-size: 0.9em; color: #999;">Loading image...</p>
+            <p id="imageStatus" style="font-style: italic; font-size: 0.9em; color: #999;">Loading report image...</p>
         </div>
         <video id="reportVideoPlayer" controls autoplay preload="metadata">
             Your browser does not support the video tag.
@@ -161,6 +181,7 @@
     </footer>
 
     <script>
+        // --- UTILITY FUNCTION ---
         function getUrlParameter(name) {
             name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
             var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
@@ -169,80 +190,99 @@
         };
 
         // --- CORE CONFIGURATION ---
+        // Your working GCS video folder path
         const GCS_VIDEO_BASE_URL = "https://storage.googleapis.com/reportcheck.jgtl.org/video/";
-        // NEW: Base URL for PNG images (root of the bucket)
-        const GCS_IMAGE_BASE_URL = "https://reportcheck.jgtl.org/"; 
+        // Your working GCS image root path (using the custom domain prefix for the bucket)
+        const GCS_IMAGE_BASE_URL = "https://reportcheck.jgtl.org/"; // Correctly uses the custom domain prefix
         const DEFAULT_VIDEO_NAME = "testsapphiregreen"; 
         
-        const videoName = getUrlParameter('video');
-        
-        // Elements
+        // --- ELEMENTS ---
+        const reportID = getUrlParameter('video'); // Using 'video' parameter name
         const videoPlayer = document.getElementById('reportVideoPlayer');
         const videoTitle = document.getElementById('videoTitle');
         const verificationStatus = document.getElementById('verificationStatus');
         const reportImage = document.getElementById('reportImage');
         const imageStatus = document.getElementById('imageStatus');
-        
+        const spinner = document.getElementById('spinner');
+
         let displayTitle = '';
+
+        // --- IMAGE EXISTENCE CHECKER (From your first code block) ---
+        function checkImage(imageUrl) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.src = imageUrl;
+                img.onload = () => resolve(true);
+                img.onerror = () => resolve(false);
+            });
+        }
         
-        if (videoName) {
-            displayTitle = videoName.toUpperCase();
+        // --- MAIN LOGIC ---
+        async function loadReport() {
+            if (!reportID) {
+                // Handle missing ID
+                displayTitle = DEFAULT_VIDEO_NAME.toUpperCase();
+                videoTitle.textContent = `Video: ${displayTitle} (Default)`;
+                verificationStatus.textContent = `No Report ID provided. Loading default video.`;
+                imageStatus.textContent = 'No image loaded in default mode.';
+                
+                // Load default video
+                const defaultVideoFile = GCS_VIDEO_BASE_URL + DEFAULT_VIDEO_NAME + '.mp4';
+                const source = document.createElement('source');
+                source.src = defaultVideoFile;
+                source.type = 'video/mp4';
+                videoPlayer.appendChild(source);
+                videoPlayer.load();
+                return;
+            }
+
+            // --- ID FOUND: Start Loading ---
+            displayTitle = reportID.toUpperCase();
+            videoTitle.textContent = `Report Video: ${displayTitle}`;
             
-            // 1. --- VIDEO LOGIC ---
-            const videoFileToLoad = GCS_VIDEO_BASE_URL + videoName + '.mp4';
+            // 1. IMAGE LOGIC: Check for existence first
+            const imageFileToLoad = GCS_IMAGE_BASE_URL + reportID + '.png';
+            spinner.style.display = 'block';
+            imageStatus.textContent = 'Verifying report image...';
+
+            const imageExists = await checkImage(imageFileToLoad);
+            spinner.style.display = 'none';
+
+            if (imageExists) {
+                reportImage.src = imageFileToLoad;
+                reportImage.alt = `Image for Report ID ${displayTitle}`;
+                reportImage.style.display = 'block';
+                imageStatus.textContent = 'Report Image loaded successfully.';
+            } else {
+                reportImage.style.display = 'none';
+                imageStatus.textContent = `Note: Corresponding PNG image not found for Report ID ${displayTitle}.`;
+                imageStatus.style.color = '#aa5500';
+            }
+
+            // 2. VIDEO LOGIC: Load the video directly
+            const videoFileToLoad = GCS_VIDEO_BASE_URL + reportID + '.mp4';
             
-            // Remove existing sources
+            // Load the video source
             while (videoPlayer.firstChild) {
                 videoPlayer.removeChild(videoPlayer.firstChild);
             }
-
             const source = document.createElement('source');
             source.src = videoFileToLoad;
             source.type = 'video/mp4';
             videoPlayer.appendChild(source);
             videoPlayer.load();
 
+            // Set final status
+            verificationStatus.textContent = `Report ID: ${displayTitle} verified successfully.`;
+
             // Set error handler for video
             videoPlayer.onerror = function() {
                 verificationStatus.textContent = `Error: Video for Report ID ${displayTitle} could not be loaded.`;
                 verificationStatus.style.color = 'red';
             };
-            
-            // 2. --- IMAGE LOGIC (NEW) ---
-            const imageFileToLoad = GCS_IMAGE_BASE_URL + videoName + '.png';
-            reportImage.src = imageFileToLoad;
-            reportImage.alt = `Image for Report ID ${displayTitle}`;
-
-            reportImage.onload = function() {
-                reportImage.style.display = 'block'; // Show image on successful load
-                imageStatus.textContent = 'Report Image loaded successfully.';
-            };
-            
-            reportImage.onerror = function() {
-                reportImage.style.display = 'none'; // Keep image hidden if it fails
-                imageStatus.textContent = `Note: No corresponding PNG image found for Report ID ${displayTitle}.`;
-                imageStatus.style.color = '#aa5500';
-            };
-
-            // Set status messages
-            videoTitle.textContent = `Report Video: ${displayTitle}`;
-            verificationStatus.textContent = `Report ID: ${displayTitle} verified successfully.`;
-            
-        } else {
-            // Default Case (no parameter)
-            displayTitle = DEFAULT_VIDEO_NAME.toUpperCase();
-            videoTitle.textContent = `Video: ${displayTitle} (Default)`;
-            verificationStatus.textContent = `No Report ID provided. Loading default video.`;
-            imageStatus.textContent = 'No image loaded in default mode.';
-            
-            // Load default video (optional)
-            const defaultVideoFile = GCS_VIDEO_BASE_URL + DEFAULT_VIDEO_NAME + '.mp4';
-            const source = document.createElement('source');
-            source.src = defaultVideoFile;
-            source.type = 'video/mp4';
-            videoPlayer.appendChild(source);
-            videoPlayer.load();
         }
+
+        loadReport();
     </script>
 </body>
 
