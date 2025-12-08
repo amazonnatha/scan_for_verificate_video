@@ -85,7 +85,18 @@
             height: auto;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); 
+            margin-bottom: 10px; /* Reduced margin to keep disclaimer close */
+        }
+
+        /* DISCLAIMER STYLE */
+        .disclaimer-text {
+            font-size: 0.75rem;
+            color: #777;
+            margin-top: 5px;
             margin-bottom: 20px;
+            line-height: 1.4;
+            font-style: italic;
+            padding: 0 15px;
         }
         
         h1 {
@@ -165,9 +176,14 @@
             <img id="reportImage" class="report-image" alt="Report Image / Certificate" loading="lazy">
             <p id="imageStatus" style="font-style: italic; font-size: 0.9em; color: #999;">Loading report image...</p>
         </div>
+        
         <video id="reportVideoPlayer" controls autoplay preload="metadata">
             Your browser does not support the video tag.
         </video>
+
+        <p class="disclaimer-text">
+            <strong>Disclaimer:</strong> Please be advised that actual gemstone colors may vary from the visual representation due to photographic lighting sources and individual monitor settings. This media is provided strictly for the purpose of product verification and condition assessment.
+        </p>
 
         <p id="verificationStatus">Verification status loading...</p>
         
