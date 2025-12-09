@@ -7,7 +7,7 @@
     <title>JGTL Gemstone Video Report</title>
     
     <style>
-        /* Define the refined gold/light theme colors */
+        /* Theme Colors */
         :root {
             --primary-gold: #c9a55c; 
             --light-bg: #f5f5f5; 
@@ -68,16 +68,19 @@
             border-radius: 8px;
             background-color: #fafafa;
             position: relative;
-            min-height: 50px; /* Reduced min-height so it doesn't look empty if image fails */
+            min-height: 100px; /* Force height so user sees spinner */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
         
         .report-image {
             max-width: 100%;
             height: auto;
             border-radius: 6px;
-            display: none; /* Hidden by default until loaded */
+            display: none; 
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-            margin: 0 auto;
         }
 
         /* Video Styling */
@@ -87,11 +90,10 @@
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); 
             margin-bottom: 10px; 
-            background-color: #000; /* Black background while loading */
-            min-height: 200px; /* Force height so player is visible even if video lags */
+            background-color: #000; 
+            min-height: 200px; 
         }
 
-        /* DISCLAIMER STYLE */
         .disclaimer-text {
             font-size: 0.75rem;
             color: #777;
@@ -114,6 +116,18 @@
             font-size: 1rem;
             color: #666;
             margin-top: 15px;
+        }
+
+        /* Debug Text - Shows exact URL if fails */
+        #debugMessage {
+            font-size: 0.75rem;
+            color: #aa5500;
+            margin-top: 10px;
+            display: none; 
+            word-break: break-all; /* Ensure long URLs don't break layout */
+            background: #fff3cd;
+            padding: 5px;
+            border-radius: 4px;
         }
         
         .back-button {
@@ -153,7 +167,7 @@
             width: 40px;
             height: 40px;
             animation: spin 1s linear infinite;
-            margin: 10px auto;
+            margin-bottom: 10px;
             display: none; 
         }
 
@@ -178,7 +192,7 @@
             <div id="spinner" class="spinner"></div>
             <img id="reportImage" class="report-image" alt="Report Certificate" loading="lazy">
             <p id="imageStatus" style="font-style: italic; font-size: 0.9em; color: #999;">Initializing...</p>
-        </div>
+            <p id="debugMessage"></p> </div>
         
         <video id="reportVideoPlayer" controls autoplay muted playsinline preload="metadata">
             Your browser does not support the video tag.
@@ -212,6 +226,7 @@
         const reportImage = document.getElementById('reportImage');
         const imageStatus = document.getElementById('imageStatus');
         const spinner = document.getElementById('spinner');
+        const debugMessage = document.getElementById('debugMessage');
 
         // --- HELPER: Get URL Params ---
         function getUrlParameter(name) {
@@ -221,7 +236,7 @@
             return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
         }
 
-        // --- MAIN LOAD FUNCTION (Run Immediately) ---
+        // --- MAIN LOAD FUNCTION ---
         function initializeReport() {
             const reportID = getUrlParameter('video');
             let videoFilename = DEFAULT_VIDEO_NAME;
@@ -238,53 +253,73 @@
                 verificationStatus.textContent = "No Report ID provided. Showing default video.";
             }
 
-            // 2. LOAD VIDEO IMMEDIATELY (Do not wait for image)
+            // 2. LOAD VIDEO (Immediate)
+            // Added cache buster to video too just in case
+            const cacheBuster = "?t=" + new Date().getTime();
             const videoUrl = GCS_VIDEO_BASE_URL + videoFilename + '.mp4';
-            console.log("Attempting to load video: " + videoUrl);
+            
             videoPlayer.src = videoUrl;
-            videoPlayer.load(); // Required to trigger loading on some devices
+            videoPlayer.load();
 
-            // Video Error Handling
             videoPlayer.onerror = function() {
-                console.error("Video failed to load");
                 verificationStatus.textContent = `Error: Video could not be loaded.`;
                 verificationStatus.style.color = 'red';
             };
 
-            // 3. LOAD IMAGE SEPARATELY (Parallel)
+            // 3. LOAD IMAGE (Strict PNG Logic)
             if (reportID) {
-                const imageUrl = GCS_IMAGE_BASE_URL + reportID + '.png';
-                console.log("Attempting to load image: " + imageUrl);
-                
-                // Show spinner
                 spinner.style.display = 'block';
-                imageStatus.textContent = 'Verifying report image...';
+                imageStatus.textContent = 'Searching for report image...';
+                debugMessage.style.display = 'none';
                 
-                // Assign Source directly (Standard HTML Image loading)
-                reportImage.src = imageUrl;
+                // ATTEMPT 1: UPPERCASE.png (Most common)
+                const attempt1 = GCS_IMAGE_BASE_URL + reportID.toUpperCase() + '.png' + cacheBuster;
+                
+                // ATTEMPT 2: ExactCase.png (As typed in URL)
+                const attempt2 = GCS_IMAGE_BASE_URL + reportID + '.png' + cacheBuster;
 
-                // Image Found
-                reportImage.onload = function() {
-                    spinner.style.display = 'none';
-                    reportImage.style.display = 'block'; // Reveal image
-                    imageStatus.textContent = 'Report Image loaded successfully.';
-                };
+                // Function to try loading an image URL
+                function tryLoadImage(url, isLastAttempt) {
+                    reportImage.src = url;
+                    
+                    reportImage.onload = function() {
+                        // SUCCESS!
+                        spinner.style.display = 'none';
+                        reportImage.style.display = 'block';
+                        imageStatus.textContent = 'Report Image loaded successfully.';
+                        debugMessage.style.display = 'none';
+                    };
 
-                // Image Not Found
-                reportImage.onerror = function() {
-                    spinner.style.display = 'none';
-                    reportImage.style.display = 'none'; // Keep hidden
-                    imageStatus.textContent = 'Report image not available.';
-                };
+                    reportImage.onerror = function() {
+                        if (!isLastAttempt) {
+                            // Try the next one
+                            tryLoadImage(attempt2, true);
+                        } else {
+                            // ALL FAILED
+                            spinner.style.display = 'none';
+                            reportImage.style.display = 'none';
+                            imageStatus.textContent = 'Image not found on server.';
+                            imageStatus.style.color = '#aa5500';
+                            
+                            // SHOW DEBUG INFO
+                            // This will tell you exactly what URLs were tried so you can check your filenames
+                            debugMessage.style.display = 'block';
+                            debugMessage.innerHTML = `<strong>Debugging Info:</strong><br>Failed to load: ${attempt1}<br>AND<br>${attempt2}`;
+                        }
+                    };
+                }
+
+                // Start with Attempt 1 (Uppercase)
+                tryLoadImage(attempt1, false);
+
             } else {
-                // No ID provided, hide image area stuff
+                // No ID provided
                 spinner.style.display = 'none';
                 imageStatus.textContent = '';
                 reportImage.style.display = 'none';
             }
         }
 
-        // Run the function
         initializeReport();
     </script>
 </body>
