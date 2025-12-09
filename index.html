@@ -1,580 +1,305 @@
- <!DOCTYPE html>
-
+<!DOCTYPE html>
 <html lang="en">
 
-
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>JGTL Gemstone Video Report</title>
-
     
-
     <style>
-
         /* Define the refined gold/light theme colors */
-
         :root {
-
             --primary-gold: #c9a55c; 
-
             --light-bg: #f5f5f5; 
-
             --dark-text: #333333;
-
             --golden-text: #8a7342;
-
             --button-hover: #b89450; 
-
         }
-
 
         /* General Styling */
-
         body {
-
             font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-
             background-color: var(--light-bg);
-
             margin: 0;
-
             display: flex;
-
             flex-direction: column;
-
             align-items: center;
-
             padding: 40px 20px;
-
             min-height: 100vh;
-
             color: var(--dark-text);
-
         }
-
 
         .header {
-
             width: 100%;
-
             padding: 20px 0;
-
             text-align: center;
-
             margin-bottom: 25px;
-
             max-width: 800px;
-
         }
-
 
         .header img {
-
             max-width: 200px;
-
             margin-bottom: 8px;
-
         }
-
 
         .header-title {
-
             font-size: 1.6rem;
-
             color: var(--golden-text);
-
             font-weight: 700;
-
             letter-spacing: 1.5px;
-
         }
-
         
-
         .video-container {
-
             width: 90%;
-
             max-width: 800px;
-
             padding: 30px;
-
             background-color: #ffffff;
-
             border-radius: 12px;
-
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); 
-
             text-align: center;
-
             border: 3px solid var(--primary-gold); 
-
         }
-
 
         /* NEW STYLE FOR IMAGE CONTAINER */
-
         .image-container {
-
             margin-bottom: 25px;
-
             padding: 10px;
-
             border: 1px solid #ddd;
-
             border-radius: 8px;
-
             background-color: #fafafa;
-
             position: relative;
-
             min-height: 150px; /* Ensures space while loading */
-
         }
-
         
-
         .report-image {
-
             max-width: 100%;
-
             height: auto;
-
             border-radius: 6px;
-
             display: none; 
-
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-
         }
-
 
         /* Video Styling */
-
         #reportVideoPlayer {
-
             width: 100%;
-
             height: auto;
-
             border-radius: 8px;
-
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); 
-
             margin-bottom: 10px; /* Reduced margin to keep disclaimer close */
-
         }
-
 
         /* DISCLAIMER STYLE */
-
         .disclaimer-text {
-
             font-size: 0.75rem;
-
             color: #777;
-
             margin-top: 5px;
-
             margin-bottom: 20px;
-
             line-height: 1.4;
-
             font-style: italic;
-
             padding: 0 15px;
-
         }
-
         
-
         h1 {
-
             font-family: 'Georgia', serif;
-
             color: var(--golden-text);
-
             font-size: 2.2rem;
-
             margin-bottom: 20px;
-
             font-weight: 400;
-
         }
-
         
-
         #verificationStatus {
-
             font-size: 1rem;
-
             color: #666;
-
             margin-top: 15px;
-
         }
-
         
-
         .back-button {
-
             display: inline-block;
-
             color: #ffffff;
-
             text-decoration: none;
-
             font-size: 1.1rem;
-
             padding: 12px 25px;
-
             margin-top: 20px;
-
             background-color: var(--primary-gold);
-
             border-radius: 6px;
-
             transition: background-color 0.3s, transform 0.2s;
-
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-
         }
-
         
-
         .back-button:hover {
-
             background-color: var(--button-hover);
-
             transform: translateY(-2px);
-
         }
-
 
         footer {
-
             margin-top: auto;
-
             padding: 20px;
-
             font-size: 0.85rem;
-
             color: #7f8c8d;
-
             text-align: center;
-
             width: 100%;
-
             max-width: 800px;
-
             margin-top: 30px;
-
         }
-
 
         /* Spinner from first code block, hidden by default */
-
         .spinner {
-
             border: 5px solid #f3f3f3;
-
             border-top: 5px solid var(--golden-text);
-
             border-radius: 50%;
-
             width: 60px;
-
             height: 60px;
-
             animation: spin 1s linear infinite;
-
             margin: 20px auto;
-
             display: none; /* Hide spinner initially */
-
         }
-
 
         @keyframes spin {
-
             0% { transform: rotate(0deg); }
-
             100% { transform: rotate(360deg); }
-
         }
-
     </style>
-
 </head>
-
 
 <body>
 
-
     <div class="header">
-
         <img src="https://verify.jgtl.org/Jade%20and%20Gems%20Testing%20Laboratory(3).png" alt="Jade and Gems Testing Laboratory Logo">
-
         <div class="header-title">JGTL Gemstone Video Report</div>
-
     </div>
-
 
     <div class="video-container">
-
         <h1 id="videoTitle">Loading Report...</h1>
-
         
-
         <div class="image-container">
-
             <div id="spinner" class="spinner"></div>
-
             <img id="reportImage" class="report-image" alt="Report Image / Certificate" loading="lazy">
-
             <p id="imageStatus" style="font-style: italic; font-size: 0.9em; color: #999;">Loading report image...</p>
-
         </div>
-
         
-
         <video id="reportVideoPlayer" controls autoplay preload="metadata">
-
             Your browser does not support the video tag.
-
         </video>
 
-
         <p class="disclaimer-text">
-
             <strong>Disclaimer:</strong> Please be advised that actual gemstone colors may vary from the visual representation due to photographic lighting sources and individual monitor settings. This media is provided strictly for the purpose of product verification and condition assessment.
-
         </p>
 
-
         <p id="verificationStatus">Verification status loading...</p>
-
         
-
         <a href="https://www.jgtl.org" class="back-button">
-
             Back to JGTL Website
-
         </a>
-
     </div>
 
-
     <footer>
-
         &copy; 2025 Jade and Gems Testing Laboratory. All rights reserved.
-
     </footer>
 
-
     <script>
-
         // --- UTILITY FUNCTION ---
-
         function getUrlParameter(name) {
-
             name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
-
             var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
-
             var results = regex.exec(location.search);
-
             return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
-
         };
 
-
         // --- CORE CONFIGURATION ---
-
         // Your working GCS video folder path
-
         const GCS_VIDEO_BASE_URL = "https://storage.googleapis.com/reportcheck.jgtl.org/video/";
-
         // Your working GCS image root path (using the custom domain prefix for the bucket)
-
         const GCS_IMAGE_BASE_URL = "https://reportcheck.jgtl.org/"; // Correctly uses the custom domain prefix
-
         const DEFAULT_VIDEO_NAME = "testsapphiregreen"; 
-
         
-
         // --- ELEMENTS ---
-
         const reportID = getUrlParameter('video'); // Using 'video' parameter name
-
         const videoPlayer = document.getElementById('reportVideoPlayer');
-
         const videoTitle = document.getElementById('videoTitle');
-
         const verificationStatus = document.getElementById('verificationStatus');
-
         const reportImage = document.getElementById('reportImage');
-
         const imageStatus = document.getElementById('imageStatus');
-
         const spinner = document.getElementById('spinner');
-
 
         let displayTitle = '';
 
-
         // --- IMAGE EXISTENCE CHECKER (From your first code block) ---
-
         function checkImage(imageUrl) {
-
             return new Promise((resolve) => {
-
                 const img = new Image();
-
                 img.src = imageUrl;
-
                 img.onload = () => resolve(true);
-
                 img.onerror = () => resolve(false);
-
             });
-
         }
-
         
-
         // --- MAIN LOGIC ---
-
         async function loadReport() {
-
             if (!reportID) {
-
                 // Handle missing ID
-
                 displayTitle = DEFAULT_VIDEO_NAME.toUpperCase();
-
                 videoTitle.textContent = `Video: ${displayTitle} (Default)`;
-
                 verificationStatus.textContent = `No Report ID provided. Loading default video.`;
-
                 imageStatus.textContent = 'No image loaded in default mode.';
-
                 
-
                 // Load default video
-
                 const defaultVideoFile = GCS_VIDEO_BASE_URL + DEFAULT_VIDEO_NAME + '.mp4';
-
                 const source = document.createElement('source');
-
                 source.src = defaultVideoFile;
-
                 source.type = 'video/mp4';
-
                 videoPlayer.appendChild(source);
-
                 videoPlayer.load();
-
                 return;
-
             }
-
 
             // --- ID FOUND: Start Loading ---
-
             displayTitle = reportID.toUpperCase();
-
             videoTitle.textContent = `Report Video: ${displayTitle}`;
-
             
-
             // 1. IMAGE LOGIC: Check for existence first
-
             const imageFileToLoad = GCS_IMAGE_BASE_URL + reportID + '.png';
-
             spinner.style.display = 'block';
-
             imageStatus.textContent = 'Verifying report image...';
 
-
             const imageExists = await checkImage(imageFileToLoad);
-
             spinner.style.display = 'none';
 
-
             if (imageExists) {
-
                 reportImage.src = imageFileToLoad;
-
                 reportImage.alt = `Image for Report ID ${displayTitle}`;
-
                 reportImage.style.display = 'block';
-
                 imageStatus.textContent = 'Report Image loaded successfully.';
-
             } else {
-
                 reportImage.style.display = 'none';
-
                 imageStatus.textContent = `Note: Corresponding Report image not found for Report ID ${displayTitle}.`;
-
                 imageStatus.style.color = '#aa5500';
-
             }
-
 
             // 2. VIDEO LOGIC: Load the video directly
-
             const videoFileToLoad = GCS_VIDEO_BASE_URL + reportID + '.mp4';
-
             
-
             // Load the video source
-
             while (videoPlayer.firstChild) {
-
                 videoPlayer.removeChild(videoPlayer.firstChild);
-
             }
-
             const source = document.createElement('source');
-
             source.src = videoFileToLoad;
-
             source.type = 'video/mp4';
-
             videoPlayer.appendChild(source);
-
             videoPlayer.load();
 
-
             // Set final status
-
             verificationStatus.textContent = `Report ID: ${displayTitle} verified successfully.`;
 
-
             // Set error handler for video
-
             videoPlayer.onerror = function() {
-
                 verificationStatus.textContent = `Error: Video for Report ID ${displayTitle} could not be loaded.`;
-
                 verificationStatus.style.color = 'red';
-
             };
-
         }
 
-
         loadReport();
-
     </script>
-
 </body>
 
-
-</html> 
+</html>
