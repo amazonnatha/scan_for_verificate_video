@@ -177,7 +177,7 @@
             <p id="imageStatus" style="font-style: italic; font-size: 0.9em; color: #999;">Loading report image...</p>
         </div>
         
-        <video id="reportVideoPlayer" controls autoplay preload="metadata">
+        <video id="reportVideoPlayer" controls autoplay muted playsinline preload="metadata">
             Your browser does not support the video tag.
         </video>
 
@@ -213,93 +213,4 @@
         const DEFAULT_VIDEO_NAME = "testsapphiregreen"; 
         
         // --- ELEMENTS ---
-        const reportID = getUrlParameter('video'); // Using 'video' parameter name
-        const videoPlayer = document.getElementById('reportVideoPlayer');
-        const videoTitle = document.getElementById('videoTitle');
-        const verificationStatus = document.getElementById('verificationStatus');
-        const reportImage = document.getElementById('reportImage');
-        const imageStatus = document.getElementById('imageStatus');
-        const spinner = document.getElementById('spinner');
-
-        let displayTitle = '';
-
-        // --- IMAGE EXISTENCE CHECKER (From your first code block) ---
-        function checkImage(imageUrl) {
-            return new Promise((resolve) => {
-                const img = new Image();
-                img.src = imageUrl;
-                img.onload = () => resolve(true);
-                img.onerror = () => resolve(false);
-            });
-        }
-        
-        // --- MAIN LOGIC ---
-        async function loadReport() {
-            if (!reportID) {
-                // Handle missing ID
-                displayTitle = DEFAULT_VIDEO_NAME.toUpperCase();
-                videoTitle.textContent = `Video: ${displayTitle} (Default)`;
-                verificationStatus.textContent = `No Report ID provided. Loading default video.`;
-                imageStatus.textContent = 'No image loaded in default mode.';
-                
-                // Load default video
-                const defaultVideoFile = GCS_VIDEO_BASE_URL + DEFAULT_VIDEO_NAME + '.mp4';
-                const source = document.createElement('source');
-                source.src = defaultVideoFile;
-                source.type = 'video/mp4';
-                videoPlayer.appendChild(source);
-                videoPlayer.load();
-                return;
-            }
-
-            // --- ID FOUND: Start Loading ---
-            displayTitle = reportID.toUpperCase();
-            videoTitle.textContent = `Report Video: ${displayTitle}`;
-            
-            // 1. IMAGE LOGIC: Check for existence first
-            const imageFileToLoad = GCS_IMAGE_BASE_URL + reportID + '.png';
-            spinner.style.display = 'block';
-            imageStatus.textContent = 'Verifying report image...';
-
-            const imageExists = await checkImage(imageFileToLoad);
-            spinner.style.display = 'none';
-
-            if (imageExists) {
-                reportImage.src = imageFileToLoad;
-                reportImage.alt = `Image for Report ID ${displayTitle}`;
-                reportImage.style.display = 'block';
-                imageStatus.textContent = 'Report Image loaded successfully.';
-            } else {
-                reportImage.style.display = 'none';
-                imageStatus.textContent = `Note: Corresponding Report image not found for Report ID ${displayTitle}.`;
-                imageStatus.style.color = '#aa5500';
-            }
-
-            // 2. VIDEO LOGIC: Load the video directly
-            const videoFileToLoad = GCS_VIDEO_BASE_URL + reportID + '.mp4';
-            
-            // Load the video source
-            while (videoPlayer.firstChild) {
-                videoPlayer.removeChild(videoPlayer.firstChild);
-            }
-            const source = document.createElement('source');
-            source.src = videoFileToLoad;
-            source.type = 'video/mp4';
-            videoPlayer.appendChild(source);
-            videoPlayer.load();
-
-            // Set final status
-            verificationStatus.textContent = `Report ID: ${displayTitle} verified successfully.`;
-
-            // Set error handler for video
-            videoPlayer.onerror = function() {
-                verificationStatus.textContent = `Error: Video for Report ID ${displayTitle} could not be loaded.`;
-                verificationStatus.style.color = 'red';
-            };
-        }
-
-        loadReport();
-    </script>
-</body>
-
-</html>
+        const reportID = getUrlParameter('video'); // Using '
