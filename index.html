@@ -7,7 +7,7 @@
     <title>JGTL Gemstone Video Report</title>
     
     <style>
-        /* Theme Colors */
+        /* Define the refined gold/light theme colors */
         :root {
             --primary-gold: #c9a55c; 
             --light-bg: #f5f5f5; 
@@ -60,7 +60,7 @@
             border: 3px solid var(--primary-gold); 
         }
 
-        /* IMAGE CONTAINER */
+        /* NEW STYLE FOR IMAGE CONTAINER */
         .image-container {
             margin-bottom: 25px;
             padding: 10px;
@@ -68,11 +68,7 @@
             border-radius: 8px;
             background-color: #fafafa;
             position: relative;
-            min-height: 100px; /* Force height so user sees spinner */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            min-height: 150px; /* Ensures space while loading */
         }
         
         .report-image {
@@ -89,11 +85,10 @@
             height: auto;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); 
-            margin-bottom: 10px; 
-            background-color: #000; 
-            min-height: 200px; 
+            margin-bottom: 10px; /* Reduced margin to keep disclaimer close */
         }
 
+        /* DISCLAIMER STYLE */
         .disclaimer-text {
             font-size: 0.75rem;
             color: #777;
@@ -116,18 +111,6 @@
             font-size: 1rem;
             color: #666;
             margin-top: 15px;
-        }
-
-        /* Debug Text - Shows exact URL if fails */
-        #debugMessage {
-            font-size: 0.75rem;
-            color: #aa5500;
-            margin-top: 10px;
-            display: none; 
-            word-break: break-all; /* Ensure long URLs don't break layout */
-            background: #fff3cd;
-            padding: 5px;
-            border-radius: 4px;
         }
         
         .back-button {
@@ -159,16 +142,16 @@
             margin-top: 30px;
         }
 
-        /* Spinner */
+        /* Spinner from first code block, hidden by default */
         .spinner {
             border: 5px solid #f3f3f3;
             border-top: 5px solid var(--golden-text);
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            width: 60px;
+            height: 60px;
             animation: spin 1s linear infinite;
-            margin-bottom: 10px;
-            display: none; 
+            margin: 20px auto;
+            display: none; /* Hide spinner initially */
         }
 
         @keyframes spin {
@@ -190,9 +173,9 @@
         
         <div class="image-container">
             <div id="spinner" class="spinner"></div>
-            <img id="reportImage" class="report-image" alt="Report Certificate" loading="lazy">
-            <p id="imageStatus" style="font-style: italic; font-size: 0.9em; color: #999;">Initializing...</p>
-            <p id="debugMessage"></p> </div>
+            <img id="reportImage" class="report-image" alt="Report Image / Certificate" loading="lazy">
+            <p id="imageStatus" style="font-style: italic; font-size: 0.9em; color: #999;">Loading report image...</p>
+        </div>
         
         <video id="reportVideoPlayer" controls autoplay muted playsinline preload="metadata">
             Your browser does not support the video tag.
@@ -214,113 +197,94 @@
     </footer>
 
     <script>
-        // --- CONFIGURATION ---
+        // --- UTILITY FUNCTION ---
+        function getUrlParameter(name) {
+            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
+            var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
+            var results = regex.exec(location.search);
+            return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+        };
+
+        // --- CORE CONFIGURATION ---
         const GCS_VIDEO_BASE_URL = "https://storage.googleapis.com/reportcheck.jgtl.org/video/";
         const GCS_IMAGE_BASE_URL = "https://reportcheck.jgtl.org/"; 
         const DEFAULT_VIDEO_NAME = "testsapphiregreen"; 
         
         // --- ELEMENTS ---
+        const reportID = getUrlParameter('video'); 
         const videoPlayer = document.getElementById('reportVideoPlayer');
         const videoTitle = document.getElementById('videoTitle');
         const verificationStatus = document.getElementById('verificationStatus');
         const reportImage = document.getElementById('reportImage');
         const imageStatus = document.getElementById('imageStatus');
         const spinner = document.getElementById('spinner');
-        const debugMessage = document.getElementById('debugMessage');
 
-        // --- HELPER: Get URL Params ---
-        function getUrlParameter(name) {
-            name = name.replace(/[\[]/, '\\[').replace(/[\]]/, '\\]');
-            var regex = new RegExp('[\\?&]' + name + '=([^&#]*)');
-            var results = regex.exec(location.search);
-            return results === null ? '' : decodeURIComponent(results[1].replace(/\+/g, ' '));
+        let displayTitle = '';
+
+        // --- IMAGE EXISTENCE CHECKER ---
+        function checkImage(imageUrl) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.src = imageUrl;
+                img.onload = () => resolve(true);
+                img.onerror = () => resolve(false);
+            });
         }
-
-        // --- MAIN LOAD FUNCTION ---
-        function initializeReport() {
-            const reportID = getUrlParameter('video');
-            let videoFilename = DEFAULT_VIDEO_NAME;
-            let displayTitle = "DEFAULT VIDEO";
-
-            // 1. SETUP TITLES & IDS
-            if (reportID) {
-                videoFilename = reportID;
-                displayTitle = reportID.toUpperCase();
-                videoTitle.textContent = `Report Video: ${displayTitle}`;
-                verificationStatus.textContent = `Report ID: ${displayTitle} verified successfully.`;
-            } else {
-                videoTitle.textContent = "Video: Default Preview";
-                verificationStatus.textContent = "No Report ID provided. Showing default video.";
+        
+        // --- MAIN LOGIC ---
+        async function loadReport() {
+            if (!reportID) {
+                // Handle missing ID
+                displayTitle = DEFAULT_VIDEO_NAME.toUpperCase();
+                videoTitle.textContent = `Video: ${displayTitle} (Default)`;
+                verificationStatus.textContent = `No Report ID provided. Loading default video.`;
+                imageStatus.textContent = 'No image loaded in default mode.';
+                
+                // Load default video - FIX #2: Use direct src assignment
+                const defaultVideoFile = GCS_VIDEO_BASE_URL + DEFAULT_VIDEO_NAME + '.mp4';
+                videoPlayer.src = defaultVideoFile;
+                videoPlayer.load();
+                return;
             }
 
-            // 2. LOAD VIDEO (Immediate)
-            // Added cache buster to video too just in case
-            const cacheBuster = "?t=" + new Date().getTime();
-            const videoUrl = GCS_VIDEO_BASE_URL + videoFilename + '.mp4';
+            // --- ID FOUND: Start Loading ---
+            displayTitle = reportID.toUpperCase();
+            videoTitle.textContent = `Report Video: ${displayTitle}`;
             
-            videoPlayer.src = videoUrl;
+            // --- FIX #3: START VIDEO LOAD IMMEDIATELY (Before Image Check) ---
+            // This ensures the video starts loading on iPhone even if the image is slow
+            const videoFileToLoad = GCS_VIDEO_BASE_URL + reportID + '.mp4';
+            videoPlayer.src = videoFileToLoad;
             videoPlayer.load();
-
+            
+            verificationStatus.textContent = `Report ID: ${displayTitle} verified successfully.`;
+            
             videoPlayer.onerror = function() {
-                verificationStatus.textContent = `Error: Video could not be loaded.`;
+                verificationStatus.textContent = `Error: Video for Report ID ${displayTitle} could not be loaded.`;
                 verificationStatus.style.color = 'red';
             };
 
-            // 3. LOAD IMAGE (Strict PNG Logic)
-            if (reportID) {
-                spinner.style.display = 'block';
-                imageStatus.textContent = 'Searching for report image...';
-                debugMessage.style.display = 'none';
-                
-                // ATTEMPT 1: UPPERCASE.png (Most common)
-                const attempt1 = GCS_IMAGE_BASE_URL + reportID.toUpperCase() + '.png' + cacheBuster;
-                
-                // ATTEMPT 2: ExactCase.png (As typed in URL)
-                const attempt2 = GCS_IMAGE_BASE_URL + reportID + '.png' + cacheBuster;
+            // --- NOW CHECK IMAGE (Does not block video) ---
+            const imageFileToLoad = GCS_IMAGE_BASE_URL + reportID + '.png';
+            spinner.style.display = 'block';
+            imageStatus.textContent = 'Verifying report image...';
 
-                // Function to try loading an image URL
-                function tryLoadImage(url, isLastAttempt) {
-                    reportImage.src = url;
-                    
-                    reportImage.onload = function() {
-                        // SUCCESS!
-                        spinner.style.display = 'none';
-                        reportImage.style.display = 'block';
-                        imageStatus.textContent = 'Report Image loaded successfully.';
-                        debugMessage.style.display = 'none';
-                    };
+            const imageExists = await checkImage(imageFileToLoad);
+            spinner.style.display = 'none';
 
-                    reportImage.onerror = function() {
-                        if (!isLastAttempt) {
-                            // Try the next one
-                            tryLoadImage(attempt2, true);
-                        } else {
-                            // ALL FAILED
-                            spinner.style.display = 'none';
-                            reportImage.style.display = 'none';
-                            imageStatus.textContent = 'Image not found on server.';
-                            imageStatus.style.color = '#aa5500';
-                            
-                            // SHOW DEBUG INFO
-                            // This will tell you exactly what URLs were tried so you can check your filenames
-                            debugMessage.style.display = 'block';
-                            debugMessage.innerHTML = `<strong>Debugging Info:</strong><br>Failed to load: ${attempt1}<br>AND<br>${attempt2}`;
-                        }
-                    };
-                }
-
-                // Start with Attempt 1 (Uppercase)
-                tryLoadImage(attempt1, false);
-
+            if (imageExists) {
+                reportImage.src = imageFileToLoad;
+                reportImage.alt = `Image for Report ID ${displayTitle}`;
+                reportImage.style.display = 'block';
+                imageStatus.textContent = 'Report Image loaded successfully.';
             } else {
-                // No ID provided
-                spinner.style.display = 'none';
-                imageStatus.textContent = '';
                 reportImage.style.display = 'none';
+                imageStatus.textContent = `Note: Corresponding Report image not found for Report ID ${displayTitle}.`;
+                imageStatus.style.color = '#aa5500';
             }
         }
 
-        initializeReport();
+        loadReport();
     </script>
 </body>
 
